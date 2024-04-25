@@ -181,6 +181,12 @@ void initializeProcesses(int signum);
 void terminateRunningProcess(int signum);
 
 /**
+ * noMoreProcesses - Informs the scheduler that no more processes would be sent.
+ */
+void noMoreProcesses(int signum);
+
+
+/**
  * addToReadyQueue - Adds a process to the ready queue based on the scheduling algorithm.
  *
  * @param process: Pointer to the process to be added.

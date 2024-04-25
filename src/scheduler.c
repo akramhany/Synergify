@@ -1,5 +1,6 @@
 #include "clk.h"
 #include "header.h"
+#include <signal.h>
 
 /**
  * getSchedulerConfigInstance - Function to get the singleton instance of SchedulerConfig.
@@ -20,6 +21,7 @@ SchedulerConfig *getSchedulerConfigInstance()
 // To be accessed by signal handlers
 pqueue_t **ready_queue, **queue;
 void generateProcesses();
+bool endScheduler = false;
 int main(int argc, char *argv[])
 {
     if (argc != 3)
@@ -31,6 +33,7 @@ int main(int argc, char *argv[])
     // Set signal handlers for process initialization and termination
     signal(SIGUSR1, initializeProcesses);
     signal(SIGCHLD, terminateRunningProcess);
+    signal(SIGUSR2, noMoreProcesses);
 
     // Get instance of scheduler configuration and set it
     SchedulerConfig *schedulerConfig = getSchedulerConfigInstance();
@@ -67,7 +70,6 @@ int main(int argc, char *argv[])
             if (selectedAlgorithmIndex == RR)
                 schedulerConfig->curr_quantum = schedulerConfig->quantum;
             curr_time = getClk();
-            printf("Finished Context Switching\n");
         }
         // Run selected algorithm if the clock has ticked
         if (curr_time != prev_time)
@@ -76,7 +78,15 @@ int main(int argc, char *argv[])
             printf("Time Step: %ld\n", prev_time);
             scheduleFunction[selectedAlgorithmIndex](ready_queue);
         }
+
+        if ((*ready_queue) == NULL && (*queue) == NULL && endScheduler)
+        {
+            break;
+        }
     }
+
+    printf("Generating Output files!!!!\n");
+    kill(getppid(), SIGCONT);
 
     // Upon termination release the clock resources.
     destroyClk(false);
@@ -94,7 +104,6 @@ int main(int argc, char *argv[])
  */
 void initializeProcesses(int signum)
 {
-    printf("SIGUSR1 received\n");
     int msgQId = msgget(SHKEY, 0666 | IPC_CREAT);
     msgbuf_t msgbuf;
 
@@ -107,14 +116,8 @@ void initializeProcesses(int signum)
         process->runtime = msgbuf.message.runtime;
         process->priority = msgbuf.message.priority;
 
-        printf("Current time: %d, Process #%d\n", getClk(), process->file_id);
         push(queue, (void *)process, 0);
     }
-
-//  if (msgctl(msgQId, IPC_RMID, NULL) == -1) {
-//      perror("msgctl");
-//      exit(EXIT_FAILURE);
-//  }
 
     signal(SIGUSR1, initializeProcesses);
 }
@@ -150,8 +153,8 @@ void generateProcesses() {
             perror("Couldn't use execvp");
             exit(EXIT_FAILURE);
         }
-        usleep(1000);
-        kill(pid, SIGSTOP);
+        //usleep(1000);
+        //kill(pid, SIGSTOP);
         printf("Process %d Paused\n", pid);
         process->fork_id = pid;
         process->state = READY;
@@ -173,15 +176,11 @@ void terminateRunningProcess(int signum)
 {
     pqueue_t **head = ready_queue;
     int stat_loc;
-    pid_t sid = wait(&stat_loc), process_id = ((PCB *)((*head)->process))->fork_id;
-    if (sid != process_id)
-    {
-        perror("Terminated Process isn't the running process");
-        exit(EXIT_FAILURE);
-    }
+    pid_t process_id = ((PCB *)((*head)->process))->fork_id;
+    
     pop(head);
     ready_queue = head;
-    printf("Process %d Terminated at %d.\n", sid, getClk());
+    printf("Process %d Terminated at %d.\n", process_id, getClk());
     signal(SIGCHLD, terminateRunningProcess);
 }
 
@@ -218,4 +217,12 @@ void addToReadyQueue(PCB *process)
         break;
     }
     ready_queue = head;
+}
+
+/**
+ * noMoreProcesses - Informs the scheduler that no more processes would be sent.
+ */
+void noMoreProcesses(int signum)
+{
+    endScheduler = true;
 }

@@ -2,6 +2,7 @@
 #include "header.h"
 #include "./ds/queue.h"
 #include <stdarg.h>
+#include <unistd.h>
 
 
 ///==============================
@@ -40,8 +41,8 @@ int main(int argc, char *argv[])
     get_scheduling_algo(&algorithm_choosen, &quantum_time);
 
     // 3. Initiate and create the scheduler and clock processes.
-    int scheduler_id = start_program(scheduler_file_name, 2, algorithm_choosen, quantum_time);
     int clk_id = start_program(clk_file_name, 0);
+    int scheduler_id = start_program(scheduler_file_name, 2, algorithm_choosen, quantum_time);
 
     // 4. Use this function after creating the clock process to initialize clock
     initClk();
@@ -75,9 +76,9 @@ int main(int argc, char *argv[])
         if (send_signal)
             kill(scheduler_id, SIGUSR1);
     }
+    
+    kill(scheduler_id, SIGUSR2);
     raise(SIGSTOP);
-
-    killpg(getpgrp(), SIGKILL);
 
     // 7. Clear clock resources
     destroyClk(true);
