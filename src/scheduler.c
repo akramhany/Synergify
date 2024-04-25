@@ -43,7 +43,6 @@ int main(int argc, char *argv[])
 
     int selectedAlgorithmIndex = schedulerConfig->selected_algorithm - 1;
     size_t prev_time = 0;
-    size_t prev_time = 0;
 
     ready_queue = malloc(sizeof(pqueue_t *));
     (*ready_queue) = NULL;
@@ -56,7 +55,6 @@ int main(int argc, char *argv[])
     PCB *running_process = NULL;
     while (1)
     {
-        int curr_time = getClk();
         int curr_time = getClk();
         // Handle context switching if the queue front changed
         generateProcesses();
@@ -73,10 +71,7 @@ int main(int argc, char *argv[])
         }
         // Run selected algorithm if the clock has ticked
         if (curr_time != prev_time)
-        if (curr_time != prev_time)
         {
-            prev_time = curr_time;
-            printf("Time Step: %ld\n", prev_time);
             prev_time = curr_time;
             printf("Time Step: %ld\n", prev_time);
             scheduleFunction[selectedAlgorithmIndex](ready_queue);
@@ -156,8 +151,6 @@ void generateProcesses() {
             exit(EXIT_FAILURE);
         }
         usleep(1000);
-        kill(pid, SIGSTOP);
-        printf("Process %d Paused\n", pid);
         kill(pid, SIGSTOP);
         printf("Process %d Paused\n", pid);
         process->fork_id = pid;
