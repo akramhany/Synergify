@@ -111,10 +111,10 @@ void initializeProcesses(int signum)
         push(queue, (void *)process, 0);
     }
 
-    if (msgctl(msgQId, IPC_RMID, NULL) == -1) {
-        perror("msgctl");
-        exit(EXIT_FAILURE);
-    }
+//  if (msgctl(msgQId, IPC_RMID, NULL) == -1) {
+//      perror("msgctl");
+//      exit(EXIT_FAILURE);
+//  }
 
     signal(SIGUSR1, initializeProcesses);
 }
